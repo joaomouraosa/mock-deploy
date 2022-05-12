@@ -5,7 +5,7 @@
 - npm install express
 
 ## index.js
-{
+>{
     import express from 'express'
     const [app, port] = [express(), 5000]
     app.get('/', (req, res) => res.send('Hello World!'))
