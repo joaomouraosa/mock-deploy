@@ -2,8 +2,11 @@
 
 1. > npm init
 2. > npm install express
-3. > echo "node_modules" > .gitignore
-4. > package.json
+3. > /server.gitignore
+```
+node_modules
+```
+4. > /server/package.json
 
 ```json
 {
@@ -15,7 +18,7 @@
 }
 ```
 
-5. > index.js
+5. > /server/index.js
 
 ```javascript
 import express from "express";
@@ -46,7 +49,7 @@ LICENSE
 .vscode
 ```
 
-6. > /server/Dockerfile
+7. > /server/Dockerfile
 ```
 FROM node:alpine
 WORKDIR /usr/src/app
@@ -62,16 +65,16 @@ CMD ["npm", "run", "production"]
 
 1. > npx create-react-app client
 2. > npm run build
-3. > package.json
+3. > /server/client/package.json
 ```json
 {
   "proxy": "http://localhost:5000"
 }
 ```
 
-#### Nginx
+#### /nginx
 
-1. > nginx/default.conf
+1. > /nginx/default.conf
 ```
 server {
         listen 80 default_server;  # this server listens on port 80
@@ -92,7 +95,7 @@ server {
         }
 }
 ```
-2. > nginx/Dockerfile
+2. > /nginx/Dockerfile
 ```
 FROM nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
@@ -102,7 +105,7 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 > sudo systemctl restart nginx # Restart nginx
 
 
-#### Docker-compose
+#### /
 
 1. > /docker-compose.yml
 ```
