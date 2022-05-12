@@ -5,7 +5,7 @@
 - npm install express
 
 ## index.js
-```json
+```javascript
 {
     import express from 'express'
     const [app, port] = [express(), 5000]
