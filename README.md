@@ -1,5 +1,3 @@
-### Express server
-
 #### /server
 
 1. > npm init
@@ -12,7 +10,7 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "production": "npm run build --prefix client && NODE_ENV=production npm start"
+    "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
   }
 }
 ```
@@ -35,22 +33,92 @@ if (process.env.NODE_ENV === "production") {
 }
 app.listen(port, () => console.log(`Listening on ${port}`));
 ```
+6. > /server/.dockerignore
+```
+node_modules
+npm-debug.log
+.git
+.gitignore
+npm-debug.log
+docker-compose*
+README.md
+LICENSE
+.vscode
+```
 
+6. > /server/Dockerfile
+```
+FROM node:alpine
+WORKDIR /usr/src/app
+COPY . .
+RUN npm install
+RUN npm install --prefix client
+EXPOSE 5000
+CMD ["npm", "run", "production"]
+```
 
-### React client
-
-#### /server
-
-1. > npx create-react-app client
 
 #### /server/client
 
+1. > npx create-react-app client
 2. > npm run build
-
 3. > package.json
-
 ```json
 {
   "proxy": "http://localhost:5000"
 }
 ```
+
+#### Nginx
+
+1. > nginx/default.conf
+```
+server {
+        listen 80 default_server;  # this server listens on port 80
+        listen [::]:80 default_server;
+        
+        server_name nodeserver;  # name this server "nodeserver", but we can call it whatever we like
+
+        location / {
+                proxy_http_version 1.1;
+                proxy_cache_bypass $http_upgrade;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_pass http://nodeserver:5000;
+        }
+}
+```
+2. > nginx/Dockerfile
+```
+FROM nginx
+COPY default.conf /etc/nginx/conf.d/default.conf
+```
+
+> sudo nginx -t # Check if the configuration file is free of errors
+> sudo systemctl restart nginx # Restart nginx
+
+
+#### Docker-compose
+
+1. > /docker-compose.yml
+```
+version: "3.8"
+services:
+    nodeserver:
+        build:
+            context: ./server
+        ports:
+            - "5000:5000"
+    nginx:
+        restart: always
+        build:
+            context: ./nginx
+        ports:
+            - "80:80"
+```
+
+2. > docker-compose up --build
