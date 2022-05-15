@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
+    "production2": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start",
+    "production": "NODE_ENV=production npm start"
   },
   "author": "",
   "license": "ISC",

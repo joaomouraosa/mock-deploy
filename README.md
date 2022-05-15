@@ -1,8 +1,16 @@
+* 1) Expose app with nginx X
+* 2) Expose app with nginx using docker
+* 2.1) Try it locally
+* 2.2) Try it in the instance
+
+### Server
+Create a simple express server
+
 #### /server
 
 1. > npm init
 2. > npm install express
-3. > /server.gitignore
+3. > /server/.gitignore
 ```
 node_modules
 ```
@@ -124,4 +132,6 @@ services:
             - "80:80"
 ```
 
-2. > docker-compose up --build
+2. > sudo docker-compose up --build
+
+
