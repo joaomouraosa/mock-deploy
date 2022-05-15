@@ -1,20 +1,14 @@
-* 1) Expose app with nginx X
-* 2) Expose app with nginx using docker
-* 2.1) Try it locally
-* 2.2) Try it in the instance
-
 ### Server
-Create a simple express server
 
-#### /server
+#### /server/
 
 1. > npm init
 2. > npm install express
-3. > /server/.gitignore
+3. > .gitignore
 ```
 node_modules
 ```
-4. > /server/package.json
+4. > package.json
 
 ```json
 {
@@ -26,7 +20,7 @@ node_modules
 }
 ```
 
-5. > /server/index.js
+5. > index.js
 
 ```javascript
 import express from "express";
@@ -44,7 +38,10 @@ if (process.env.NODE_ENV === "production") {
 }
 app.listen(port, () => console.log(`Listening on ${port}`));
 ```
-6. > /server/.dockerignore
+
+#### Dockerize
+
+1. > .dockerignore
 ```
 node_modules
 npm-debug.log
@@ -57,17 +54,19 @@ LICENSE
 .vscode
 ```
 
-7. > /server/Dockerfile
+2. > Dockerfile
 ```
 FROM node:alpine
 WORKDIR /usr/src/app
 COPY . .
 RUN npm install
 RUN npm install --prefix client
+RUN npm install pm2@latest -g
 EXPOSE 5000
-CMD ["npm", "run", "production"]
+CMD ["pm2", "start", "\"npm run prod\"", "--name", "nodeserver"]
 ```
 
+### React frontend
 
 #### /server/client
 
@@ -80,9 +79,11 @@ CMD ["npm", "run", "production"]
 }
 ```
 
+### Reverse proxy
+
 #### /nginx
 
-1. > /nginx/default.conf
+1. > default.conf
 ```
 server {
         listen 80 default_server;  # this server listens on port 80
