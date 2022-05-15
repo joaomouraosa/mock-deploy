@@ -104,7 +104,10 @@ server {
         }
 }
 ```
-2. > /nginx/Dockerfile
+
+#### Dockerize
+
+1. > /nginx/Dockerfile
 ```
 FROM nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
@@ -114,7 +117,7 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 > sudo systemctl restart nginx # Restart nginx
 
 
-#### /
+#### Dockerize the whole thing
 
 1. > /docker-compose.yml
 ```
