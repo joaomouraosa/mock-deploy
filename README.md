@@ -8,8 +8,7 @@
   - [dockerize](#nginx-docker)
 3. [Compose both services](#compose)
   - [build](#compose-build)
-  - [push to github registry](#compose-push)
-  - [pull from the github registry](#compose-pull)
+  - [push/pull to/from the github registry](#compose-push)
 4. [GCP](#gcp)
   - [Start and access the instance](#gcp-start)
   - [Pull & run the images from the github registry](#gcp-run)
@@ -27,7 +26,7 @@
   1.  ```bash 
       cd server && npm init && git install express
       ```
-  2. ```json
+  2. ```javascript
      // server/package.json
      "type": "module",
      "scripts": {
@@ -59,10 +58,13 @@
 npx create-react-app client
 cd client && npm run build
 ```
-```text
+
+```javascript
 // server/client/package.json
 {
+  //...
   "proxy": "http://localhost:5000"
+  //...
 }
 ```  
 
@@ -107,7 +109,8 @@ server {
 ```
 
 ```bash 
-sudo apt install nginx && sudo systemctl stop nginx
+sudo apt install nginx 
+sudo systemctl stop nginx
 ```
    
 ```bash 
@@ -129,7 +132,8 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
 ```bash
-docker build . && docker run express-react-deploy_nginx
+docker build . 
+#docker run express-react-deploy_nginx
 ```
 
 
@@ -198,6 +202,8 @@ docker-compose -f compose-run.yml up -d
 # start the instance
 gcloud compute instances start instance-2 --zone="europe-west1-b"
 
+#gcloud compute ssh instance-2 --zone="europe-west1-b"  # access via SSH
+
 # pull from github
 gcloud compute ssh instance-2 --zone="europe-west1-b" 
   --command="cd online_shop && git pull && sudo systemctl stop nginx"
@@ -216,10 +222,34 @@ gcloud compute ssh instance-2 --zone="europe-west1-b"
 
 
 ### SSL  <a name="ssl"></a>
-#### Locally <a name="ssl-local"></a>
-```bash 
-docker exec -it express-react-deploy_nginx_1 sh
-sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
-```
 
-#### GCP <a name="ssl-gcp"></a>
+* locally:
+  - local machine:
+    ```bash 
+    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+    ```
+  - docker container:
+    ```bash 
+    docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
+    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+    docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
+    ```
+
+* GCP:
+  ```bash 
+  gcloud compute ssh instance-2 --zone="europe-west1-b"  # in the instance
+  ```
+  - instance:
+    ```bash 
+    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+    ```
+  - docker container:
+    ```bash 
+    docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
+    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+    exit
+    docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
+    ```
+  ```bash 
+  # gcloud compute instances stop instance-2 --zone="europe-west1-b" 
+  ```
