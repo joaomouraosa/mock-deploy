@@ -66,7 +66,16 @@ cd client && npm run build
   "proxy": "http://localhost:5000"
   //...
 }
-```  
+```
+
+```bash 
+#npm install pm2@latest -g
+pm2 list
+pm2 delete nodeserver
+pm2 start "npm run prod" --name nodeserver  # or npm run prod
+curl localhost:5000/api/connected
+```
+
 
 #### Dockerize <a name="app-docker"></a>
 
@@ -75,9 +84,10 @@ cd client && npm run build
 FROM node:alpine
 WORKDIR /usr/src/app
 COPY . .
-RUN npm install && npm install --prefix client && npm install pm2@latest -g
+RUN npm install
+RUN npm install --prefix client
 EXPOSE 5000
-CMD ["pm2", "start", "\"npm run prod\"", "--name", "nodeserver"]
+CMD ["npm", "run", "prod"]
 ```
 
 ```bash 
@@ -92,13 +102,12 @@ docker build . && docker run express-react-deploy_nodeserver
 ```yml
 # nginx/default.conf
 server {
-  listen 80 default_server;  # this server listens on port 80
-  listen [::]:80 default_server;
+  listen 80 default_server;
         
-  server_name nodeserver;  # name this server "nodeserver", but we can call it whatever we like
+  server_name nodeserver;
 
   location / {
-    proxy_pass http://localhost:5000;
+    proxy_pass http://nodeserver:5000;
     proxy_http_version 1.1;
     proxy_cache_bypass $http_upgrade;
     proxy_set_header Upgrade $http_upgrade;
@@ -111,15 +120,18 @@ server {
 ```bash 
 sudo apt install nginx 
 sudo systemctl stop nginx
+#fuser 80/tcp 
 ```
    
 ```bash 
-cp default.conf /etc/nginx/conf.d/default.conf
+sudo cp default.conf /etc/nginx/conf.d/
 ```
    
 ```bash 
 sudo nginx -t # Check if the configuration file is free of errors
 #sudo systemctl start nginx
+#sudo systemctl status nginx
+#curl localhost:80
 ```
    
 
@@ -127,7 +139,10 @@ sudo nginx -t # Check if the configuration file is free of errors
 
 ```yml
 # /nginx/Dockerfile
-FROM nginx
+FROM nginx:1.20-alpine
+RUN apk add python3 python3-dev py3-pip build-base libressl-dev musl-dev libffi-dev rust cargo
+RUN pip3 install pip --upgrade
+RUN pip3 install certbot-nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
@@ -143,73 +158,61 @@ docker build .
 
 ```yml
 # /docker-compose.yml
-version: "3.8"
+version: "3.3"
 services:
-  nodeserver:
-    build:
-      context: ./server
-      ports:
-        - "5000:5000"
-  nginx:
-      restart: always
-      build:
-        context: ./nginx
-      ports:
-        - "80:80"
-        - "443:443"
+    nodeserver:
+        image: ghcr.io/joaomouraosa/mock_nodeserver
+        restart: always
+        build:
+            context: ./server
+        ports:
+            - "5000:5000"
+    nginx:
+        image: ghcr.io/joaomouraosa/mock_nginx
+        restart: always
+        build:
+            context: ./nginx
+        ports:
+            - "80:80"
 ```
 
 ```bash 
-sudo docker-compose up --build
+docker-compose up --build
 ```
 #### Push/pull the images to/from github registry  <a name="compose-push"></a>
 ```bash 
-docker push ghcr.io/joaomouraosa/online_shop_nodeserver:latest
-docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
+docker push ghcr.io/joaomouraosa/mock_nodeserver:latest
+docker push ghcr.io/joaomouraosa/mock_nginx:latest
 
-docker pull ghcr.io/joaomouraosa/online_shop_nodeserver:latest
-docker pull ghcr.io/joaomouraosa/online_shop_nginx:latest
+docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest
+docker pull ghcr.io/joaomouraosa/mock_nginx:latest
 ```
 
 
 #### Run the images from the github registry  <a name="compose-pull"></a>
 
-```yml
-# compose-run.yml
-version: "3.3"
-services:
-  nodeserver:
-    image: ghcr.io/joaomouraosa/online_shop_nodeserver:latest
-    ports:
-      - "5000:5000"
-  nginx:
-    restart: always  
-    image: nginx:1.15-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-```
-
 ```bash 
-docker-compose -f compose-run.yml up -d
+docker-compose up --no-build
 ```
 ### GCP <a name='gcp'></a>
 
-#### Pull & run the images from the registry <a name='gcp-run'></a>
-
 ```bash 
-
 # start the instance
 gcloud compute instances start instance-2 --zone="europe-west1-b"
 
 #gcloud compute ssh instance-2 --zone="europe-west1-b"  # access via SSH
 
 # pull from github
-gcloud compute ssh instance-2 --zone="europe-west1-b" 
-  --command="cd online_shop && git pull && sudo systemctl stop nginx"
+
+gcloud compute ssh instance-2 --zone="europe-west1-b" \
+  --command="git clone https://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/github.com/joaomouraosa/express-react-deploy.git"
+
+
+gcloud compute ssh instance-2 --zone="europe-west1-b" \
+  --command="cd express-react-deploy && git pull && sudo systemctl stop nginx && killall nginx"
 
 # pull the images from the registry    
-gcloud compute ssh instance-2 --zone="europe-west1-b" --command="
+gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nodeserver:latest && \
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nginx:latest"
 
