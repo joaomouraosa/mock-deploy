@@ -2,29 +2,28 @@
 1. [Build the express-react app](#app)
   - [server side](#app/server)
   - [front side](#app/front)
-  - [dockerize](#app/front)
-2. [Nginx proxy](#app/front)
-  - [locally](#app/front)
-  - [dockerize](#app/front)
-3. [Compose both services](#app/front)
-  - [build](#app/front)
-  - [push to github registry](#app/front)
-  - [pull from the github registry](#app/front)
-4. [GCP](#app/front)
-  - [Start and access the instance](#app/front)
-  - [Pull & run the images from the github registry](#app/front)
-5. [SSL](#app/front)
-  - [Certificate the site](#app/front)
-    - [Locally](#app/front)
-    - [GCP instance](#app/front)
+  - [dockerize](#app/docker)
+2. [Nginx proxy](#nginx)
+  - [locally](#nginx/local)
+  - [dockerize](#nginx/docker)
+3. [Compose both services](#compose)
+  - [build](#compose/build)
+  - [push to github registry](#compose/push)
+  - [pull from the github registry](#compose/pull)
+4. [GCP](#gcp)
+  - [Start and access the instance](#gcp/start)
+  - [Pull & run the images from the github registry](#gcp/run)
+5. [SSL](#ssl)
+  - [Locally](#ssl/local)
+  - [GCP instance](#ssl/gcp)
 
 
 
-## App  <a name="app"></a>
+## App 
 
-### Express-react app 
+### Express-react app  <a name="app"></a>
 
-#### Express server (/server)
+#### Express server (/server)  <a name="app/server"></a>
   1. > npm init && git install express
   2. > echo 'node_modules' >> .gitignore
   3. > package.json
@@ -53,7 +52,7 @@
     app.listen(port, () => console.log(`Listening on ${port}`));
   ```
 
-#### React frontend (/server/client)
+#### React frontend (/server/client) <a name="app/client"></a>
 
   1. > npx create-react-app client
   2. > npm run build
@@ -64,7 +63,7 @@
   }
   ```
 
-#### Dockerize
+#### Dockerize <a name="app/docker"></a>
 
 1. > .dockerignore
 ```
@@ -88,9 +87,9 @@ CMD ["pm2", "start", "\"npm run prod\"", "--name", "nodeserver"]
 3. > #docker build . && docker run express-react-deploy_nodeserver
 
 
-### Reverse proxy 
+### Reverse proxy  <a name="nginx"></a>
 
-#### Nginx (/nginx)
+#### Nginx (/nginx)  <a name="nginx/local"></a>
 
 1. > default.conf
 ```
@@ -119,7 +118,7 @@ server {
 5. > sudo nginx -t # Check if the configuration file is free of errors
 6. > sudo systemctl start nginx 
 
-#### Dockerize
+#### Dockerize  <a name="nginx/docker"></a>
 
 1. > /nginx/Dockerfile
 ```
@@ -130,9 +129,9 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 2. > #docker build . && docker run express-react-deploy_nginx
 
 
-### Docker compose (dockerize both services)
+### Docker compose (dockerize both services) <a name="compose"></a>
 
-#### Build the images locally
+#### Build the images locally  <a name="compose/local"></a>
 
 1. > /docker-compose.yml
 ```
@@ -154,14 +153,14 @@ services:
 
 2. > sudo docker-compose up --build
 
-#### Push the images to github registry
+#### Push the images to github registry  <a name="compose/push"></a>
 
 
 
-#### Pull the images from the github registry
+#### Pull the images from the github registry  <a name="compose/pull"></a>
 
 
-### SSL
+### SSL  <a name="ssl"></a>
 1. > docker exec -it express-react-deploy_nginx_1 sh
 2. > sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
 
