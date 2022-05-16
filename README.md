@@ -61,8 +61,10 @@ cd client && npm run build
 ```
 ```json 
 {
-  // /server/client/package.json
+  # /server/client/package.json
+  # ...
   "proxy": "http://localhost:5000"
+  # ...
 }
 ```  
 
