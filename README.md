@@ -1,45 +1,55 @@
-### Server
+* ## App
 
-#### /server/
+  1. ### Express server
+    1. > npm init && git install express
+    2. > .gitignore
+    ```
+    node_modules
+    ```
+    3. > package.json
+    ```json
+    {
+      "type": "module",
+      "scripts": {
+        "start": "node index.js",
+        "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
+      }
+    }
+    ```
 
-1. > npm init
-2. > npm install express
-3. > .gitignore
-```
-node_modules
-```
-4. > package.json
+    4. > index.js
 
+    ```javascript
+      import express from "express";
+      import path from "path";
+      import { fileURLToPath } from "url";
+      const [app, port] = [express(), 5000];
+      const __dirname = path.dirname(fileURLToPath(import.meta.url));
+      app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
+
+      if (process.env.NODE_ENV === "production") {
+        app.use(express.static(`${__dirname}/client/build`));
+        app.get("*", (req, res) =>
+        res.sendFile(`${__dirname}/client/build/index.html`)
+      );
+    }
+    app.listen(port, () => console.log(`Listening on ${port}`));
+  ```
+
+
+
+### React frontend
+
+1. > npx create-react-app client
+2. > npm run build
+3. > /server/client/package.json
 ```json
 {
-  "type": "module",
-  "scripts": {
-    "start": "node index.js",
-    "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
-  }
+  "proxy": "http://localhost:5000"
 }
 ```
 
-5. > index.js
-
-```javascript
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-const [app, port] = [express(), 5000];
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
-
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(`${__dirname}/client/build`));
-  app.get("*", (req, res) =>
-    res.sendFile(`${__dirname}/client/build/index.html`)
-  );
-}
-app.listen(port, () => console.log(`Listening on ${port}`));
-```
-
-#### Dockerize
+### Dockerize
 
 1. > .dockerignore
 ```
@@ -66,22 +76,10 @@ EXPOSE 5000
 CMD ["pm2", "start", "\"npm run prod\"", "--name", "nodeserver"]
 ```
 
-### React frontend
 
-#### /server/client
+## Reverse proxy
 
-1. > npx create-react-app client
-2. > npm run build
-3. > /server/client/package.json
-```json
-{
-  "proxy": "http://localhost:5000"
-}
-```
-
-### Reverse proxy
-
-#### /nginx
+### /nginx
 
 1. > default.conf
 ```
