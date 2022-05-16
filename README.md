@@ -59,12 +59,10 @@
 npx create-react-app client
 cd client && npm run build
 ```
-```json 
+```text
+// server/client/package.json
 {
-  # /server/client/package.json
-  # ...
   "proxy": "http://localhost:5000"
-  # ...
 }
 ```  
 
