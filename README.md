@@ -1,28 +1,28 @@
 ## Contents
-1. [Build the express-react app](app)
-  - [server side](app/server)
-  - [front side](app/front)
-  - [dockerize](app/front)
-2. [Nginx proxy](app/front)
-  - [locally](app/front)
-  - [dockerize](app/front)
-3. [Compose both services](app/front)
-  - [build](app/front)
-  - [push to github registry](app/front)
-  - [pull from the github registry](app/front)
-4. [GCP](app/front)
-  - [Start and access the instance](app/front)
-  - [Pull & run the images from the github registry](app/front)
-5. [SSL](app/front)
-  - [Certificate the site](app/front)
-    - [Locally](app/front)
-    - [GCP instance](app/front)
+1. [Build the express-react app](#app)
+  - [server side](#app/server)
+  - [front side](#app/front)
+  - [dockerize](#app/front)
+2. [Nginx proxy](#app/front)
+  - [locally](#app/front)
+  - [dockerize](#app/front)
+3. [Compose both services](#app/front)
+  - [build](#app/front)
+  - [push to github registry](#app/front)
+  - [pull from the github registry](#app/front)
+4. [GCP](#app/front)
+  - [Start and access the instance](#app/front)
+  - [Pull & run the images from the github registry](#app/front)
+5. [SSL](#app/front)
+  - [Certificate the site](#app/front)
+    - [Locally](#app/front)
+    - [GCP instance](#app/front)
 
 
 
-## App
+## App  <a name="app"></a>
 
-### Express-react app[app]
+### Express-react app 
 
 #### Express server (/server)
   1. > npm init && git install express
