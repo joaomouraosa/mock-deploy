@@ -117,7 +117,7 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 > sudo systemctl restart nginx # Restart nginx
 
 
-#### Dockerize the whole thing
+### Dockerize the whole thing
 
 1. > /docker-compose.yml
 ```
@@ -134,8 +134,28 @@ services:
             context: ./nginx
         ports:
             - "80:80"
+
+    version: '3'
+
+  webserver:
+    image: nginx:latest
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+    volumes:
+      - ./nginx/conf/:/etc/nginx/conf.d/:ro
+      - ./certbot/www:/var/www/certbot/:ro
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
 ```
 
 2. > sudo docker-compose up --build
 
+
+### SSL
+1. > docker exec -it express-react-deploy_nginx_1 sh
+2. > sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
 
