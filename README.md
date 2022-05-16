@@ -1,66 +1,77 @@
-* ## App
+## Contents
+1. [Build the express-react app](app)
+  - [server side](app/server)
+  - [front side](app/front)
+  - [dockerize](app/front)
+2. [Nginx proxy](app/front)
+  - [locally](app/front)
+  - [dockerize](app/front)
+3. [Compose both services](app/front)
+  - [build](app/front)
+  - [push to github registry](app/front)
+  - [pull from the github registry](app/front)
+4. [GCP](app/front)
+  - [Start and access the instance](app/front)
+  - [Pull & run the images from the github registry](app/front)
+5. [SSL](app/front)
+  - [Certificate the site](app/front)
+    - [Locally](app/front)
+    - [GCP instance](app/front)
 
-  1. ### Express server
-    1. > npm init && git install express
-    2. > .gitignore
-    ```
-    node_modules
-    ```
-    3. > package.json
-    ```json
-    {
-      "type": "module",
-      "scripts": {
-        "start": "node index.js",
-        "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
-      }
+
+
+## App
+
+### Express-react app
+
+#### Express server (/server)
+  1. > npm init && git install express
+  2. > echo 'node_modules' >> .gitignore
+  3. > package.json
+  ```json
+    "type": "module",
+    "scripts": {
+      "start": "node index.js",
+      "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
     }
-    ```
+  ```
 
-    4. > index.js
+  4. > index.js
 
-    ```javascript
-      import express from "express";
-      import path from "path";
-      import { fileURLToPath } from "url";
-      const [app, port] = [express(), 5000];
-      const __dirname = path.dirname(fileURLToPath(import.meta.url));
-      app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
+  ```javascript
+    import express from "express";
+    import path from "path";
+    import { fileURLToPath } from "url";
+    const [app, port] = [express(), 5000];
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
 
-      if (process.env.NODE_ENV === "production") {
-        app.use(express.static(`${__dirname}/client/build`));
-        app.get("*", (req, res) =>
-        res.sendFile(`${__dirname}/client/build/index.html`)
-      );
+    if (process.env.NODE_ENV === "production") {
+      app.use(express.static(`${__dirname}/client/build`));
+      app.get("*", (req, res) => res.sendFile(`${__dirname}/client/build/index.html`));
     }
     app.listen(port, () => console.log(`Listening on ${port}`));
   ```
 
+#### React frontend (/server/client)
 
+  1. > npx create-react-app client
+  2. > npm run build
+  3. > /server/client/package.json
+  ```json
+  {
+    "proxy": "http://localhost:5000"
+  }
+  ```
 
-### React frontend
-
-1. > npx create-react-app client
-2. > npm run build
-3. > /server/client/package.json
-```json
-{
-  "proxy": "http://localhost:5000"
-}
-```
-
-### Dockerize
+#### Dockerize
 
 1. > .dockerignore
 ```
 node_modules
-npm-debug.log
 .git
 .gitignore
-npm-debug.log
 docker-compose*
-README.md
-LICENSE
 .vscode
 ```
 
@@ -69,17 +80,17 @@ LICENSE
 FROM node:alpine
 WORKDIR /usr/src/app
 COPY . .
-RUN npm install
-RUN npm install --prefix client
-RUN npm install pm2@latest -g
+RUN npm install && npm install --prefix client && npm install pm2@latest -g
 EXPOSE 5000
 CMD ["pm2", "start", "\"npm run prod\"", "--name", "nodeserver"]
 ```
 
+3. > #docker build . && docker run express-react-deploy_nodeserver
 
-## Reverse proxy
 
-### /nginx
+### Reverse proxy 
+
+#### Nginx (/nginx)
 
 1. > default.conf
 ```
@@ -102,6 +113,11 @@ server {
         }
 }
 ```
+2. > sudo apt install nginx
+3. > sudo systemctl stop nginx
+4. > cp default.conf /etc/nginx/conf.d/default.conf
+5. > sudo nginx -t # Check if the configuration file is free of errors
+6. > sudo systemctl start nginx 
 
 #### Dockerize
 
@@ -111,11 +127,12 @@ FROM nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
-> sudo nginx -t # Check if the configuration file is free of errors
-> sudo systemctl restart nginx # Restart nginx
+2. > #docker build . && docker run express-react-deploy_nginx
 
 
-### Dockerize the whole thing
+### Docker compose (dockerize both services)
+
+#### Build the images locally
 
 1. > /docker-compose.yml
 ```
@@ -132,25 +149,16 @@ services:
             context: ./nginx
         ports:
             - "80:80"
-
-    version: '3'
-
-  webserver:
-    image: nginx:latest
-    ports:
-      - 80:80
-      - 443:443
-    restart: always
-    volumes:
-      - ./nginx/conf/:/etc/nginx/conf.d/:ro
-      - ./certbot/www:/var/www/certbot/:ro
-  certbot:
-    image: certbot/certbot:latest
-    volumes:
-      - ./certbot/www/:/var/www/certbot/:rw
+            - "443:443"
 ```
 
 2. > sudo docker-compose up --build
+
+#### Push the images to github registry
+
+
+
+#### Pull the images from the github registry
 
 
 ### SSL
