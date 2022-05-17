@@ -230,7 +230,15 @@ gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
   sudo docker pull ghcr.io/joaomouraosa/mock_nginx:latest"
 ```
 
+
 ##### Run <a name='gcp-run'></a>
+
+
+```bash
+# Stop running containers
+gcloud compute ssh instance-2 --zone="europe-west1-b" --command="sudo docker kill $(sudo docker ps -q)" 
+```
+
 
 ```bash
 # Run
@@ -279,6 +287,8 @@ exit
 ```
 ```bash 
 sudo docker push ghcr.io/joaomouraosa/mock_nginx:latest
+sudo docker tag ghcr.io/joaomouraosa/mock_nginx:latest ghcr.io/joaomouraosa/mock_nginx:certified
+sudo docker push ghcr.io/joaomouraosa/mock_nginx:certified
 ```
 ##### Test
 ```bash 
