@@ -39,8 +39,10 @@ cd server && npm init && git install express
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+
 const [app, port] = [express(), 5000];
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
   if (process.env.NODE_ENV === "prod"){
     app.use(express.static(`${__dirname}/client/build`));
@@ -48,13 +50,11 @@ app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
   }
 app.listen(port, () => console.log(`Listening on ${port}`));
 ```
-  
 
 #### React frontend  <a name="app-client"></a>
 
 ```bash 
-npx create-react-app client
-cd client && npm run build
+#npx create-react-app client
 ```
 
 ```javascript
@@ -78,7 +78,6 @@ pm2 start "npm run prod" --name nodeserver  # or npm run prod
 
 curl localhost:5000/api/connected
 ```
-
 
 #### Dockerize <a name="app-docker"></a>
 
@@ -125,8 +124,7 @@ server {
 
 ```bash 
 sudo apt install nginx && sudo systemctl stop nginx && killall nginx
-#fuser 80/tcp 
-#fuser 5000/tcp 
+#fuser 80/tcp && fuser 5000/tcp 
 ```
    
 ```bash 
@@ -135,9 +133,9 @@ sudo cp default.conf /etc/nginx/conf.d/
    
 ```bash 
 sudo nginx -t
-#sudo systemctl start nginx
-#sudo systemctl status nginx
-#curl localhost:80
+sudo systemctl start nginx
+sudo systemctl status nginx
+curl localhost:80
 ```
    
 
@@ -151,6 +149,7 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
 ```bash
+#sudo systemctl stop nginx && killall nginx
 #docker build . && docker run express-react-deploy_nginx
 #docker stop express-react-deploy_nginx
 ```
@@ -184,14 +183,14 @@ services:
 ```bash 
 docker-compose up --build
 ```
-#### Push/pull the images to/from github registry  <a name="compose-push"></a>
+#### Push the images to the github registry  <a name="compose-push"></a>
 ```bash 
 docker push ghcr.io/joaomouraosa/mock_nodeserver:latest
 docker push ghcr.io/joaomouraosa/mock_nginx:latest
 ```
 
 
-#### Run the images from the github registry  <a name="compose-pull"></a>
+#### Run the images from the Registry  <a name="compose-pull"></a>
 
 ```bash
 docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest
@@ -199,6 +198,7 @@ docker pull ghcr.io/joaomouraosa/mock_nginx:latest
 
 docker-compose up --no-build
 ```
+
 ### GCP <a name='gcp'></a>
 
 ##### Prepare the instance
@@ -227,8 +227,6 @@ gcloud compute ssh instance-2 --zone="europe-west1-b" \
 gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nodeserver:latest && \
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nginx:latest"
-
-
 ```
 
 ##### Run
@@ -287,4 +285,4 @@ docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
 curl https://fastfix.shop/api && curl https://www.fastfix.shop/api
 
 # gcloud compute instances stop instance-2 --zone="europe-west1-b" 
-  ```
+```
