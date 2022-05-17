@@ -1,21 +1,13 @@
 ## Contents
 1. [Build the express-react app](#app)
-  - [server side](#app-server)
-  - [front side](#app-front)
-  - [dockerize](#app-docker)
-2. [Nginx proxy](#nginx)
-  - [locally](#nginx-local)
-  - [dockerize](#nginx-docker)
-3. [Compose both services](#compose)
-  - [build](#compose-build)
-  - [push/pull to/from the github registry](#compose-push)
-4. [GCP](#gcp)
-  - [Start and access the instance](#gcp-start)
-  - [Pull & run the images from the github registry](#gcp-run)
-5. [SSL](#ssl)
-  - [Locally](#ssl-local)
-  - [GCP instance](#ssl-gcp)
 
+2. [Nginx proxy](#nginx)
+
+3. [Dockerize both services](#compose)
+
+4. [GCP](#gcp)
+
+5. [SSL](#ssl)
 
 
 ## App 
@@ -95,8 +87,8 @@ CMD ["npm", "run", "prod"]
 ```
 
 ```bash 
-#docker build . && docker run express-react-deploy_nodeserver
-#docker stop express-react-deploy_nodeserver
+#docker build . && docker run mock-deploy_nodeserver
+#docker stop mock-deploy_nodeserver
 ```
 
 
@@ -151,13 +143,13 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 ```bash
 #sudo systemctl stop nginx && killall nginx
 #docker build . && docker run express-react-deploy_nginx
-#docker stop express-react-deploy_nginx
+#docker stop mock-deploy_nginx
 ```
 
 
 ### Docker compose (dockerize both services) <a name="compose"></a>
 
-#### Build the images locally  <a name="compose-local"></a>
+#### Build the images locally  <a name="compose"></a>
 
 ```yml
 # /docker-compose.yml
@@ -190,7 +182,7 @@ docker push ghcr.io/joaomouraosa/mock_nginx:latest
 ```
 
 
-#### Run the images from the Registry  <a name="compose-pull"></a>
+#### Run the images from the Registry  <a name="compose-run"></a>
 
 ```bash
 docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest
@@ -201,7 +193,7 @@ docker-compose up --no-build
 
 ### GCP <a name='gcp'></a>
 
-##### Prepare the instance
+##### Prepare the instance <a name='gcp-start'></a>
 ```bash 
 gcloud compute instances start instance-2 --zone="europe-west1-b"
 
@@ -211,33 +203,33 @@ gcloud compute ssh instance-2 --zone="europe-west1-b" \
 #gcloud compute ssh instance-2 --zone="europe-west1-b"  # access via SSH
 ```
 
-##### Pull the data
+##### Pull the data <a name='gcp-pull'></a>
 
 ```bash 
 
 # Clone
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="git clone https://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/github.com/joaomouraosa/express-react-deploy.git"
+  --command="git clone https://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/github.com/joaomouraosa/mock-deploy.git"
 
 # Pull the code
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="cd express-react-deploy && git pull"
+  --command="cd mock-deploy && git pull"
 
 # Pull the images    
 gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
-  sudo docker pull ghcr.io/joaomouraosa/online_shop_nodeserver:latest && \
-  sudo docker pull ghcr.io/joaomouraosa/online_shop_nginx:latest"
+  sudo docker pull ghcr.io/joaomouraosa/mock-deploy_nodeserver:latest && \
+  sudo docker pull ghcr.io/joaomouraosa/mock-deploy_nginx:latest"
 ```
 
-##### Run
+##### Run <a name='gcp-run'></a>
 
 ```bash
 # Run
 gcloud compute ssh instance-2 --zone="europe-west1-b"\ 
-  --command="cd online_shop && sudo docker-compose up --no-build" 
+  --command="cd mock-deploy && sudo docker-compose up --no-build" 
 ```
 
-##### Test
+##### Test <a name='gcp-test'></a>
 
 ```bash
 ## SSL [ ] DNS [ ] Globally [ ]
@@ -261,7 +253,7 @@ curl https://www.fastfix.shop/api
 
 ### SSL  <a name="ssl"></a>
 
-##### GCP:
+##### GCP
 
 ###### In the instance directly
 ```bash 
@@ -278,7 +270,7 @@ sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
 exit
 ```
 ```bash 
-docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
+docker push ghcr.io/joaomouraosa/mock-deploy:latest
 ```
 ##### Test
 ```bash 
