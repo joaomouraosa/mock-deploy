@@ -23,34 +23,32 @@
 ### Express-react app  <a name="app"></a>
 
 #### Express server (/server)  <a name="app-server"></a>
-  1.  ```bash 
-      cd server && npm init && git install express
-      ```
-  2. ```javascript
-     // server/package.json
-     "type": "module",
-     "scripts": {
-       "start": "node index.js",
-       "production": "npm install --prefix client && npm run build --prefix client && npm install && NODE_ENV=production npm start"
-     }
-     ```
-
-  3. ```javascript
-      // server/index.js
-      import express from "express";
-      import path from "path";
-      import { fileURLToPath } from "url";
-      const [app, port] = [express(), 5000];
-      const __dirname = path.dirname(fileURLToPath(import.meta.url));
-      app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
-
-      if (process.env.NODE_ENV === "production") {
-        app.use(express.static(`${__dirname}/client/build`));
-        app.get("*", (req, res) => res.sendFile(`${__dirname}/client/build/index.html`));
-      }
-      app.listen(port, () => console.log(`Listening on ${port}`));
-      ```
-      
+```bash 
+cd server && npm init && git install express
+```
+```javascript
+// server/package.json
+"type": "module",
+"scripts": {
+  "start": "node index.js",
+  "prod": "NODE_ENV=prod npm start"
+}
+```
+```javascript
+// server/index.js
+import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+const [app, port] = [express(), 5000];
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.get("/api/connected", (req, res) => res.json({ message: "Connected!" }));
+  if (process.env.NODE_ENV === "prod"){
+    app.use(express.static(`${__dirname}/client/build`));
+    app.get("*", (req, res) => res.sendFile(`${__dirname}/client/build/indehtml`));
+  }
+app.listen(port, () => console.log(`Listening on ${port}`));
+```
+  
 
 #### React frontend  <a name="app-client"></a>
 
@@ -70,9 +68,14 @@ cd client && npm run build
 
 ```bash 
 #npm install pm2@latest -g
-pm2 list
+#pm2 list
 pm2 delete nodeserver
+
+npm install && npm install --prefix client
+npm run build --prefix client
+
 pm2 start "npm run prod" --name nodeserver  # or npm run prod
+
 curl localhost:5000/api/connected
 ```
 
@@ -86,12 +89,15 @@ WORKDIR /usr/src/app
 COPY . .
 RUN npm install
 RUN npm install --prefix client
+RUN npm run build --prefix client
 EXPOSE 5000
+#CMD ["pm2-runtime", "start", "\"npm run prod\"", "--name", "nodeserver"]
 CMD ["npm", "run", "prod"]
 ```
 
 ```bash 
-docker build . && docker run express-react-deploy_nodeserver
+#docker build . && docker run express-react-deploy_nodeserver
+#docker stop express-react-deploy_nodeserver
 ```
 
 
@@ -99,12 +105,12 @@ docker build . && docker run express-react-deploy_nodeserver
 
 #### Nginx (/nginx)  <a name="nginx-local"></a>
 
-```yml
+```javascript
 # nginx/default.conf
 server {
   listen 80 default_server;
         
-  server_name nodeserver;
+  server_name fastfix.shop www.fastfix.shop;
 
   location / {
     proxy_pass http://nodeserver:5000;
@@ -118,9 +124,9 @@ server {
 ```
 
 ```bash 
-sudo apt install nginx 
-sudo systemctl stop nginx
+sudo apt install nginx && sudo systemctl stop nginx && killall nginx
 #fuser 80/tcp 
+#fuser 5000/tcp 
 ```
    
 ```bash 
@@ -128,7 +134,7 @@ sudo cp default.conf /etc/nginx/conf.d/
 ```
    
 ```bash 
-sudo nginx -t # Check if the configuration file is free of errors
+sudo nginx -t
 #sudo systemctl start nginx
 #sudo systemctl status nginx
 #curl localhost:80
@@ -140,15 +146,13 @@ sudo nginx -t # Check if the configuration file is free of errors
 ```yml
 # /nginx/Dockerfile
 FROM nginx:1.20-alpine
-RUN apk add python3 python3-dev py3-pip build-base libressl-dev musl-dev libffi-dev rust cargo
-RUN pip3 install pip --upgrade
-RUN pip3 install certbot-nginx
+RUN apk --no-cache add certbot certbot-nginx
 COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
 ```bash
-docker build . 
-#docker run express-react-deploy_nginx
+#docker build . && docker run express-react-deploy_nginx
+#docker stop express-react-deploy_nginx
 ```
 
 
@@ -161,12 +165,12 @@ docker build .
 version: "3.3"
 services:
     nodeserver:
-        image: ghcr.io/joaomouraosa/mock_nodeserver
-        restart: always
-        build:
-            context: ./server
-        ports:
-            - "5000:5000"
+       image: ghcr.io/joaomouraosa/mock_nodeserver
+       restart: always
+       build:
+           context: ./server
+       ports:
+           - "5000:5000"
     nginx:
         image: ghcr.io/joaomouraosa/mock_nginx
         restart: always
@@ -174,6 +178,7 @@ services:
             context: ./nginx
         ports:
             - "80:80"
+            - "443:443"
 ```
 
 ```bash 
@@ -183,76 +188,103 @@ docker-compose up --build
 ```bash 
 docker push ghcr.io/joaomouraosa/mock_nodeserver:latest
 docker push ghcr.io/joaomouraosa/mock_nginx:latest
-
-docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest
-docker pull ghcr.io/joaomouraosa/mock_nginx:latest
 ```
 
 
 #### Run the images from the github registry  <a name="compose-pull"></a>
 
-```bash 
+```bash
+docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest
+docker pull ghcr.io/joaomouraosa/mock_nginx:latest
+
 docker-compose up --no-build
 ```
 ### GCP <a name='gcp'></a>
 
+##### Prepare the instance
 ```bash 
-# start the instance
 gcloud compute instances start instance-2 --zone="europe-west1-b"
 
+gcloud compute ssh instance-2 --zone="europe-west1-b" \
+  --command="sudo systemctl stop nginx && killall nginx"
+
 #gcloud compute ssh instance-2 --zone="europe-west1-b"  # access via SSH
+```
 
-# pull from github
+##### Pull the data
 
+```bash 
+
+# Clone
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
   --command="git clone https://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/github.com/joaomouraosa/express-react-deploy.git"
 
-
+# Pull the code
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="cd express-react-deploy && git pull && sudo systemctl stop nginx && killall nginx"
+  --command="cd express-react-deploy && git pull"
 
-# pull the images from the registry    
+# Pull the images    
 gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nodeserver:latest && \
   sudo docker pull ghcr.io/joaomouraosa/online_shop_nginx:latest"
 
-# run the images
-gcloud compute ssh instance-2 --zone="europe-west1-b" 
-  --command="cd online_shop && sudo docker-compose -f compose-run.yml up --build" 
 
-# gcloud compute instances stop instance-2 --zone="europe-west1-b"  
 ```
 
+##### Run
+
+```bash
+# Run
+gcloud compute ssh instance-2 --zone="europe-west1-b"\ 
+  --command="cd online_shop && sudo docker-compose up --no-build" 
+```
+
+##### Test
+
+```bash
+## SSL [ ] DNS [ ] Globally [ ]
+gcloud compute ssh instance-2 --zone="europe-west1-b"\ 
+  --command="curl localhost:80/api" 
+
+## SSL [ ] DNS [ ] Globally [X]
+IP=`gcloud compute ssh instance-2 --zone="europe-west1-b" --command="curl ifconfig.me"`
+curl http://$IP/api
+
+## SSL [ ] DNS [X] Globally [X]
+curl http://fastfix.shop/api
+curl http://www.fastfix.shop/api
+
+## SSL [X] DNS [X] Globally [X]
+curl https://fastfix.shop/api
+curl https://www.fastfix.shop/api
+
+#gcloud compute instances stop instance-2 --zone="europe-west1-b"
+```
 
 ### SSL  <a name="ssl"></a>
 
-* locally:
-  - local machine:
-    ```bash 
-    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
-    ```
-  - docker container:
-    ```bash 
-    docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
-    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
-    docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
-    ```
+##### GCP:
 
-* GCP:
-  ```bash 
-  gcloud compute ssh instance-2 --zone="europe-west1-b"  # in the instance
-  ```
-  - instance:
-    ```bash 
-    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
-    ```
-  - docker container:
-    ```bash 
-    docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
-    sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
-    exit
-    docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
-    ```
-  ```bash 
-  # gcloud compute instances stop instance-2 --zone="europe-west1-b" 
+###### In the instance directly
+```bash 
+sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+```
+###### In a container
+
+```bash 
+gcloud compute ssh instance-2 --zone="europe-west1-b"
+```
+```bash 
+docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
+sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+exit
+```
+```bash 
+docker push ghcr.io/joaomouraosa/online_shop_nginx:latest
+```
+##### Test
+```bash 
+curl https://fastfix.shop/api && curl https://www.fastfix.shop/api
+
+# gcloud compute instances stop instance-2 --zone="europe-west1-b" 
   ```
