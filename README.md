@@ -87,8 +87,10 @@ CMD ["npm", "run", "prod"]
 ```
 
 ```bash 
-#docker build . && docker run mock-deploy_nodeserver
-#docker stop mock-deploy_nodeserver
+docker build . --tag ghcr.io/joaomouraosa/mock_nodeserver:latest
+docker run -p 5000:5000 --name nodeserver ghcr.io/joaomouraosa/mock_nodeserver:latest &
+curl localhost:5000/api/connected
+#docker stop ghcr.io/joaomouraosa/mock_nodeserver:latest
 ```
 
 
@@ -104,7 +106,7 @@ server {
   server_name fastfix.shop www.fastfix.shop;
 
   location / {
-    proxy_pass http://nodeserver:5000;
+    proxy_pass http://nodeserver:5000;  # if in localhost: http://localhost:5000; 
     proxy_http_version 1.1;
     proxy_cache_bypass $http_upgrade;
     proxy_set_header Upgrade $http_upgrade;
@@ -127,7 +129,7 @@ sudo cp default.conf /etc/nginx/conf.d/
 sudo nginx -t
 sudo systemctl start nginx
 sudo systemctl status nginx
-curl localhost:80
+curl localhost:80/api
 ```
    
 
@@ -141,9 +143,12 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 ```
 
 ```bash
-#sudo systemctl stop nginx && killall nginx
-#docker build . && docker run express-react-deploy_nginx
-#docker stop mock-deploy_nginx
+docker build . --tag ghcr.io/joaomouraosa/mock_nginx:latest
+```
+
+```bash 
+curl localhost:5000/api/connected
+#docker stop ghcr.io/joaomouraosa/mock_nodeserver:latest
 ```
 
 
@@ -174,6 +179,10 @@ services:
 
 ```bash 
 docker-compose up --build
+curl localhost:80/api
+
+docker image prune
+
 ```
 #### Push the images to the github registry  <a name="compose-push"></a>
 ```bash 
@@ -198,7 +207,7 @@ docker-compose up --no-build
 gcloud compute instances start instance-2 --zone="europe-west1-b"
 
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="sudo systemctl stop nginx && killall nginx"
+ --command="sudo systemctl stop nginx && sudo killall nginx"
 
 #gcloud compute ssh instance-2 --zone="europe-west1-b"  # access via SSH
 ```
@@ -209,32 +218,31 @@ gcloud compute ssh instance-2 --zone="europe-west1-b" \
 
 # Clone
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="git clone https://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/github.com/joaomouraosa/mock-deploy.git"
+ --command="git clone https://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@github.com/joaomouraosa/mock-deploy.git"
 
 # Pull the code
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
-  --command="cd mock-deploy && git pull"
+ --command="cd mock-deploy && git pull"
 
 # Pull the images    
 gcloud compute ssh instance-2 --zone="europe-west1-b" --command="\
-  sudo docker pull ghcr.io/joaomouraosa/mock-deploy_nodeserver:latest && \
-  sudo docker pull ghcr.io/joaomouraosa/mock-deploy_nginx:latest"
+  sudo docker pull ghcr.io/joaomouraosa/mock_nodeserver:latest && \
+  sudo docker pull ghcr.io/joaomouraosa/mock_nginx:latest"
 ```
 
 ##### Run <a name='gcp-run'></a>
 
 ```bash
 # Run
-gcloud compute ssh instance-2 --zone="europe-west1-b"\ 
-  --command="cd mock-deploy && sudo docker-compose up --no-build" 
+gcloud compute ssh instance-2 --zone="europe-west1-b" --command="cd mock-deploy && sudo docker-compose up --no-build" 
 ```
 
 ##### Test <a name='gcp-test'></a>
 
 ```bash
 ## SSL [ ] DNS [ ] Globally [ ]
-gcloud compute ssh instance-2 --zone="europe-west1-b"\ 
-  --command="curl localhost:80/api" 
+res=`gcloud compute ssh instance-2 --zone="europe-west1-b" --command="curl localhost:80/api"`
+echo $res
 
 ## SSL [ ] DNS [ ] Globally [X]
 IP=`gcloud compute ssh instance-2 --zone="europe-west1-b" --command="curl ifconfig.me"`
@@ -265,16 +273,16 @@ sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
 gcloud compute ssh instance-2 --zone="europe-west1-b"
 ```
 ```bash 
-docker exec -it express-react-deploy_nginx_1 sh  # in the docker container
-sudo certbot --nginx -d fastfix.shop -d www.fastfix.shop
+sudo docker exec -it mock-deploy_nginx_1 sh  # in the docker container
+certbot --nginx -d fastfix.shop -d www.fastfix.shop
 exit
 ```
 ```bash 
-docker push ghcr.io/joaomouraosa/mock-deploy:latest
+sudo docker push ghcr.io/joaomouraosa/mock_nginx:latest
 ```
 ##### Test
 ```bash 
 curl https://fastfix.shop/api && curl https://www.fastfix.shop/api
 
-# gcloud compute instances stop instance-2 --zone="europe-west1-b" 
+gcloud compute instances stop instance-2 --zone="europe-west1-b" 
 ```
