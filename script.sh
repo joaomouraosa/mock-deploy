@@ -8,7 +8,7 @@ NODE_CONTAINER='mock-deploy_nodeserver_1'
 NGINX_CONTAINER='mock-deploy_nginx_1'
 
 NODE_REGISTRY='ghcr.io/joaomouraosa/mock_nodeserver:latest'
-NGINX_REGISTRY='ghcr.io/joaomouraosa/mock_nginx:latest'
+NGINX_REGISTRY='ghcr.io/joaomouraosa/mock_nginx:certified'
 
 REPO="joaomouraosa/mock-deploy.git"
 TOKEN="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"
@@ -35,29 +35,26 @@ test() {
 
 
 build() {
-    echo 'Building locally...' && docker-compose up --build --no-start nodeserver
-    echo 'Pushing locally...' &&  docker push $NODE_REGISTRY #&& docker push $NGINX_REGISTRY
+    echo '== [1/2] Building...' && docker-compose up --build --no-start nodeserver #nginx
+    echo '== [2/2] Pushing...'  && docker push $NODE_REGISTRY #&& docker push $NGINX_REGISTRY
 }
 
 
 run() {
-    echo 'Pulling...'
-    docker pull $NODE_REGISTRY
-    docker pull $NGINX_REGISTRY
-
-    echo 'Run...'
-    docker-compose up --no-build 
+    echo '== [1/2] Pulling...' && docker pull $NODE_REGISTRY && docker pull $NGINX_REGISTRY
+    echo '== [1/2] Running...' && docker-compose up --no-build 
 }
+
 
 deploy() {
-    echo '== [1/6] Start the instance...' && gcloud compute instances start instance-2 --zone="europe-west1-b"
-    echo '== [2/6] Killing nginx...' && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="sudo systemctl stop nginx && sudo killall nginx"
+    echo '== [1/6] Start the instance...'       && gcloud compute instances start instance-2 --zone="europe-west1-b"
+    echo '== [2/6] Kill nginx services...'      && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="sudo systemctl stop nginx && sudo killall nginx"
     echo '== [3/6] Cloning/Pulling the repo...' && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="git clone https://$TOKEN@$REPO; cd mock-deploy && git pull"
-    echo '== [4/6] Stop running containers...' && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="cd mock-deploy && sudo docker-compose down; sudo docker ps -q | xargs sudo docker kill"
-    echo '== [5/6] Pulling the images...' && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="sudo docker pull $NODE_REGISTRY && sudo docker pull $NGINX_REGISTRY"
-    echo '== [6/6] Running...' && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="cd mock-deploy && sudo docker-compose up --no-build"
+    echo '== [4/6] Stop running containers...'  && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="cd mock-deploy && sudo docker-compose down; sudo docker system prune -f"
+    echo '== [5/6] Pulling the images...'       && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="sudo docker pull $NODE_REGISTRY && sudo docker pull $NGINX_REGISTRY"
+    echo '== [6/6] Running...'                  && gcloud compute ssh instance-2 --zone="europe-west1-b" --command="cd mock-deploy && sudo docker-compose up --no-build"
 }
-34.140.60.175
+
 ssl() {
     echo 'Not automated - steps:'
     echo '======================'
@@ -75,6 +72,10 @@ ssl() {
     echo ''
 }
 
+all() {
+    echo 'all'
+}
+
 
 for arg; do 
     case "$arg" in
@@ -83,6 +84,7 @@ for arg; do
         -r|--run) run;;
         -s|--ssl) ssl;;
         -t|--test) test;;
+        -a|--all) echo "all";;
         *) echo "Usage: (-s|--scan)";;
     esac
 done
