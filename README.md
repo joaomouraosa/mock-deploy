@@ -296,3 +296,9 @@ curl https://fastfix.shop/api && curl https://www.fastfix.shop/api
 
 gcloud compute instances stop instance-2 --zone="europe-west1-b" 
 ```
+
+##### Script
+
+```bash 
+sh script.sh -h
+```

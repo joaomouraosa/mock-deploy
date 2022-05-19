@@ -21,7 +21,7 @@ NODE_CONTAINER="${REPO_HANDLER}_${NODE_SERVICE}_1"
 NGINX_CONTAINER="${REPO_HANDLER}_${NGINX_SERVICE}_1"
 
 NODE_REGISTRY="ghcr.io/$GIT_USERNAME/${REPO_HANDLER}_${NODE_SERVICE}:latest"
-NGINX_REGISTRY="ghcr.io/$GIT_USERNAME/${REPO_HANDLER}_${NODE_SERVICE}:latest"
+NGINX_REGISTRY="ghcr.io/$GIT_USERNAME/${REPO_HANDLER}_${NGINX_SERVICE}:latest"
 
 ## VPS
 INSTANCE="instance-2 --zone=europe-west1-b"
@@ -41,28 +41,35 @@ testURL() {
 
 
 test() {
-    pp 'Locally' && URLs=('http://localhost:5000' 'http://localhost:80' 'http://localhost'); for URL in ${URLs[@]}; do testURL $URL; done
-    pp 'VPS - Without SSL' && URLs=('http://fastfix.shop' 'http://www.fastfix.shop'); for URL in ${URLs[@]}; do testURL $URL; done
-    pp 'VPS - With SSL' && URLs=('https://fastfix.shop' 'https://www.fastfix.shop'); for URL in ${URLs[@]}; do testURL $URL; done
+    pp 'Local' && URLs=('http://localhost:5000' 'http://localhost:80' 'http://localhost'); for URL in ${URLs[@]}; do testURL $URL; done
+    pp 'VPS - DNS [ ] SSL [ ]' && URLs=($IP':80'); for URL in ${URLs[@]}; do testURL $URL; done
+    pp 'VPS - DNS [X] SSL [ ]' && URLs=('http://fastfix.shop' 'http://www.fastfix.shop'); for URL in ${URLs[@]}; do testURL $URL; done
+    pp 'VPS - DNS [X] SSL [X]' && URLs=('https://fastfix.shop' 'https://www.fastfix.shop'); for URL in ${URLs[@]}; do testURL $URL; done
 }
+
+# getIP() {
+#     gcloud compute instances describe $INSTANCE --format='get(networkInterfaces[0].accessConfigs[0].natIP)'
+# }
 
 
 build() {
-    pp '== Build [1/3] Build'  && docker-compose up --build --no-start nodeserver #nginx
+    pp '== Build [1/3] Build'  && docker-compose up --build --no-start $NODE_SERVICE #nginx
     pp '== Build [2/3] Commit' && docker commit $NODE_CONTAINER $NODE_REGISTRY
     pp '== Build [3/3] Push'   && docker push $NODE_REGISTRY #&& docker push $NGINX_REGISTRY
 }
 
 
 run() {
-    pp '== Run locally  [1/2] Pull'  && docker pull $NODE_REGISTRY && docker pull $NGINX_REGISTRY
+    #pp '== Run locally  [1/2] Pull'  && docker pull $NODE_REGISTRY 
+    docker pull $NGINX_REGISTRY
     pp '== Run locally  [2/2] Run'   && docker-compose up --no-build -d
 }
 
 
 clean() {
-    pp '== Stop [1/2] Stop'   && docker-compose down --rmi all
-    pp '== Stop [2/2] Clean'  && docker system prune -f
+    pp '== Clean [1/2] Stop'   && docker-compose down #--rmi all
+    pp '== Clean [2/2] Clean'  && docker system prune -f
+    pp '== Clean [4/6] Clean instance'  && gcloud compute ssh $INSTANCE --command="cd mock-deploy && sudo docker-compose down; sudo docker system prune -f"
 }
 
 
@@ -84,7 +91,7 @@ deploy() {
 ssl() {
     pp 'Not automated - steps:'
     pp '======================'
-    pp '# Local [1/6] Start instance & access the instance' 
+    pp '# Local [1/6] Start instance & access the instance, eg:' 
     echo "gcloud compute instances start $INSTANCE"
     echo "gcloud compute ssh $INSTANCE"
     echo ''
@@ -126,7 +133,7 @@ for arg; do
         -r|--run) run;;
         -s|--ssl) ssl;;
         -t|--test) test;;
-        -a|--all|-brdt|--) build && run && deploy && sleep 5s && test;;
+        -a|--all|-brdt|--) build && deploy && sleep 6s && test;;
         -c|--clean) clean;;
         -e|--exit) exit && sleep 5s && test;;
         -h|--help|*) help;;
