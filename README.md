@@ -218,7 +218,7 @@ gcloud compute ssh instance-2 --zone="europe-west1-b" \
 
 # Clone
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
- --command="git clone https://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@github.com/joaomouraosa/mock-deploy.git"
+ --command="git clone https://ghp_SECRET_TOKEN_12345@github.com/joaomouraosa/mock-deploy.git"
 
 # Pull the code
 gcloud compute ssh instance-2 --zone="europe-west1-b" \
