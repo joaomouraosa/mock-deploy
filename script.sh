@@ -9,7 +9,7 @@ REGULAR=$(tput sgr0)
 ## Git
 REPO_HANDLER='mock-deploy'
 GIT_USERNAME='joaomouraosa'
-TOKEN="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"
+TOKEN="ghp_SECRET_TOKENabcdefghioj123"
 REPO="$GIT_USERNAME/$REPO_HANDLER.git"
 
 ## docker-compose
